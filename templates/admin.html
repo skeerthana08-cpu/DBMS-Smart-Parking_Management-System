@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-2">
+    <!-- Header and Report Print Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <h2 class="fw-bold text-dark mb-0">📊 Admin Management Dashboard</h2>
+        <button onclick="window.print()" class="btn btn-dark shadow-sm fw-bold">
+            <i class="bi bi-printer"></i> Generate PDF Report
+        </button>
+    </div>
+
+    <!-- SMART SEARCH SECTION -->
+    <form action="/admin" method="GET" class="mb-4 d-flex gap-2">
+        <input type="text" name="search" class="form-control form-control-sm border-primary" placeholder="🔍 Search User Name, Slot ID, or Plate..." value="{{ request.args.get('search', '') }}">
+        <button type="submit" class="btn btn-sm btn-primary px-4 fw-bold">Search</button>
+    </form>
+
+    <!-- KPI SUMMARY CARDS -->
+    <div class="row g-3 mb-5 text-center">
+        <!-- Card 1: Total Logs -->
+        <div class="col-md-4">
+            <div class="card bg-primary text-white p-3 shadow-sm border-0">
+                <h6 class="text-uppercase small fw-bold opacity-75">Total Logs</h6>
+                <h3>{{ bookings|length }}</h3>
+            </div>
+        </div>
+        
+        <!-- Card 2: Net Revenue (Excludes Cancelled) -->
+        <div class="col-md-4">
+            <div class="card bg-success text-white p-3 shadow-sm border-0">
+                <h6 class="text-uppercase small fw-bold opacity-75">Net Revenue</h6>
+                <h3>₹{{ bookings|rejectattr('status', 'equalto', 'Cancelled')|sum(attribute='total_fee')|round(2) }}</h3>
+            </div>
+        </div>
+        
+        <!-- Card 3: Occupancy Breakdown (Requested: Total, Manual, Online) -->
+        <div class="col-md-4">
+            <div class="card bg-warning text-dark p-3 shadow-sm border-0">
+                <h6 class="text-uppercase small fw-bold">Occupancy Breakdown</h6>
+                <h3 class="mb-0">Total: {{ occ.total }}</h3>
+                <small class="fw-bold">
+                    Manual: {{ occ.manual }} | Online: {{ occ.online }}
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- EMERGENCY MAINTENANCE CONTROL -->
+    <h6 class="text-danger fw-bold mb-3"><i class="bi bi-tools"></i> Emergency Slot Control (Maintenance)</h6>
+    <div class="row mb-5 g-2">
+        {% for s in slots %}
+        <div class="col-md-2">
+            <div class="p-2 border rounded text-center small {{'bg-warning-subtle' if s.status=='Maintenance' else 'bg-white shadow-sm'}}">
+                <strong>{{s.slot_number}}</strong><br>
+                <a href="/admin/toggle_slot/{{s.slot_id}}" class="btn btn-xs py-0 mt-1 {{'btn-success' if s.status=='Maintenance' else 'btn-warning'}}" style="font-size:0.65rem">
+                    {{ 'Unlock' if s.status=='Maintenance' else 'Block' }}
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- LIVE TRANSACTION LOGS (Updated with Hub, Type, and Time) -->
+    <h5 class="text-primary fw-bold mb-3"><i class="bi bi-activity"></i> Live System Logs</h5>
+    <div class="card shadow-sm border-0 mb-5">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark text-uppercase small">
+                    <tr>
+                        <th class="ps-4">User</th>
+                        <th>Hub</th>
+                        <th>Slot</th>
+                        <th>Type</th>
+                        <th>Time (In ➔ Out)</th>
+                        <th>Status</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in bookings %}
+                    <tr>
+                        <td class="ps-4"><strong>{{b.name}}</strong></td>
+                        <td><small class="text-muted">{{b.location_name}}</small></td>
+                        <td><span class="badge bg-secondary">Slot {{b.slot_number}}</span></td>
+                        
+                        <!-- SHOWING BOOKING TYPE (Requested) -->
+                        <td><small class="fw-bold text-dark border px-2 rounded bg-light">{{b.booking_type}}</small></td>
+                        
+                        <!-- SHOWING TIME (Requested) -->
+                        <td><small class="fw-bold">{{b.start_time.strftime('%H:%M')}} ➔ {{b.end_time.strftime('%H:%M')}}</small></td>
+                        
+                        <td>
+                            <span class="badge {% if b.status=='Active' %}bg-primary{% elif b.status=='Overstay' %}bg-danger{% elif b.status=='Upcoming' %}bg-info text-dark{% else %}bg-secondary{% endif %} rounded-pill px-3">
+                                {{b.status}}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <!-- ALWAYS SHOW BILL/RECEIPT -->
+                            <a href="/payment/{{ b.booking_id }}" class="btn btn-xs btn-outline-success py-1 px-2 me-1 shadow-xs" style="font-size: 0.7rem;">Bill</a>
+
+                            {% if b.status in ['Active','Overstay','Upcoming'] %}
+                                <!-- GATE OUT (CHECKOUT) -->
+                                <a href="/checkout/{{b.booking_id}}" class="btn btn-xs btn-info py-1 shadow-sm fw-bold" style="font-size: 0.7rem;">Gate Out</a>
+                                
+                                <!-- FORCE CANCEL -->
+                                <a href="/cancel/{{b.booking_id}}" class="btn btn-xs btn-outline-danger ms-1 py-1 shadow-sm fw-bold" style="font-size: 0.7rem;" onclick="return confirm('Force Cancel?')">Cancel</a>
+                            {% else %}
+                                <span class="text-muted small">Logged</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- USER ACCOUNT MANAGEMENT -->
+    <h5 class="text-danger fw-bold mb-3"><i class="bi bi-people-fill"></i> User Database Control</h5>
+    <div class="card shadow-sm border-danger">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead class="table-light small">
+                    <tr><th>UID</th><th>Name</th><th>Email</th><th>Vehicle Plate</th><th class="text-end pe-4">Action</th></tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td>{{u.user_id}}</td>
+                        <td><strong>{{u.name}}</strong></td>
+                        <td>{{u.email}}</td>
+                        <td><span class="badge bg-light text-dark border">{{u.plate_number or 'N/A'}}</span></td>
+                        <td class="text-end pe-4">
+                            <!-- Cascade Delete Trigger -->
+                            <a href="/admin/delete_user/{{u.user_id}}" class="btn btn-xs btn-danger py-1 px-3 shadow-sm" onclick="return confirm('CRITICAL: Permanently delete this user and all their history?')">Delete Account</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

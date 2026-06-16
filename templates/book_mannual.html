@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-md-5">
+        <div class="card shadow-lg p-4 border-0 rounded-4">
+            <h3 class="text-primary fw-bold text-center mb-4">Manual Entry Check-in</h3>
+            <form action="/book_manual" method="POST">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">VEHICLE PLATE NUMBER</label>
+                    <input type="text" name="plate_no" class="form-control bg-light border-0" placeholder="KA-01-AB-1234" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">SELECT AVAILABLE SLOT</label>
+                    <select name="slot_id" class="form-select border-primary" required>
+                        <option value="" disabled selected>-- Choose Physical Slot --</option>
+                        {% for s in slots %}<option value="{{s.slot_id}}">{{s.slot_number}} ({{s.location_name}})</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">DURATION (HOURS)</label>
+                    <input type="number" name="hours" class="form-control bg-light border-0" value="1" min="1" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">Confirm Gate Entry</button>
+            </form>
+            <div class="text-center mt-3"><a href="/admin" class="text-muted small">← Back to Dashboard</a></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

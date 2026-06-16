@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-3">
+    <!-- Header Section with Hub Selector -->
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <div>
+            <h2 class="fw-bold text-dark mb-0">🅿️ Parking Dashboard</h2>
+            <p class="text-muted small mb-0">Sensing real-time occupancy at <strong>{{ selected }}</strong></p>
+        </div>
+        
+        <!-- HUB SELECTOR WITH CHECK BUTTON -->
+        <form action="/dashboard" method="GET" class="d-flex align-items-center gap-2">
+            <span class="small fw-bold text-muted text-uppercase">Switch Hub:</span>
+            <select name="location" class="form-select form-select-sm border-primary shadow-sm" style="width: auto;">
+                {% for loc in locations %}
+                <option value="{{loc.location_name}}" {{'selected' if selected==loc.location_name}}>{{loc.location_name}}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm fw-bold px-3">Check</button>
+        </form>
+    </div>
+
+    <!-- SECTION 1: VISUAL SLOT GRID -->
+    <!-- This grid differentiates between Available, Maintenance, and Occupied (Active/Overstay) -->
+    <div class="row">
+        {% for s in slots %}
+        <div class="col-md-4 mb-4">
+            <div class="card text-center h-100 shadow-sm border-0 
+                {% if s.status=='Available' %} border-top border-success border-5
+                {% elif s.status=='Maintenance' %} border-top border-warning border-5
+                {% else %} border-top border-danger border-5 {% endif %}">
+                
+                <div class="card-body">
+                    <div class="display-6 mb-2">
+                        {% if s.status == 'Available' %}🟢{% elif s.status == 'Maintenance' %}🚧{% else %}🚗{% endif %}
+                    </div>
+                    <h5 class="fw-bold mb-1">{{ s.slot_number }}</h5>
+                    <p class="text-muted small mb-3">Rate: ₹{{ s.price_per_hour }}/hr</p>
+                    
+                    <span class="badge {% if s.status=='Available' %}bg-success{% elif s.status=='Maintenance' %}bg-warning text-dark{% else %}bg-danger{% endif %} mb-3 px-3 shadow-sm">
+                        {{ s.status }}
+                    </span>
+                    <hr class="my-2">
+                    
+                    {% if s.status == 'Available' %}
+                        <button class="btn btn-primary btn-sm w-100 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#b{{s.slot_id}}">
+                            Reserve Now
+                        </button>
+                    {% else %}
+                        <button class="btn btn-secondary btn-sm w-100 fw-bold" disabled>
+                            {% if s.status == 'Maintenance' %}Under Maintenance{% else %}Fully Occupied{% endif %}
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- BOOKING MODAL FOR EACH SLOT -->
+        <div class="modal fade" id="b{{s.slot_id}}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form action="/book_online" method="POST" class="modal-content border-0 shadow-lg">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title fw-bold">Book Slot: {{ s.slot_number }}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <input type="hidden" name="slot_id" value="{{ s.slot_id }}">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">SELECT ENTRY TIME</label>
+                            <input type="datetime-local" name="start_time" class="form-control bg-light border-0" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">EXPECTED EXIT TIME</label>
+                            <input type="datetime-local" name="end_time" class="form-control bg-light border-0" required>
+                            <div class="form-text text-danger small">* 2x Penalty fee applies for late check-out.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light border-0">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary px-4 fw-bold shadow">Confirm Reservation</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- SECTION 2: LIVE PARKING STATUS (GLOBAL TRACKING) -->
+    <!-- This table satisfies the requirement for 'Vehicle Tracking', 'Booking Mode', and 'Time Duration' -->
+    <h4 class="mt-5 text-primary fw-bold border-bottom pb-2">
+        <i class="bi bi-activity"></i> Live System Status (All Active Hubs)
+    </h4>
+    <div class="card shadow-sm border-0 rounded-3 overflow-hidden mt-3 mb-5">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark text-uppercase small">
+                    <tr>
+                        <th class="ps-4">User Name</th>
+                        <th>Hub Location</th>
+                        <th>Slot</th>
+                        <th>Booking Mode</th>
+                        <th>Time (In ➔ Out)</th>
+                        <th class="pe-4">Current Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in active_records %}
+                    <tr>
+                        <td class="ps-4"><strong>{{ r.name }}</strong></td>
+                        <td><small class="text-muted fw-bold">{{ r.location_name }}</small></td>
+                        <td><span class="badge bg-light text-dark border">Slot {{ r.slot_number }}</span></td>
+                        
+                        <!-- DISPLAYING BOOKING TYPE (Manual or Online) -->
+                        <td>
+                            <small class="fw-bold text-dark border px-2 py-1 rounded bg-light">{{ r.booking_type }}</small>
+                        </td>
+                        
+                        <!-- DISPLAYING FORMATTED TIME -->
+                        <td>
+                            <small class="fw-bold text-muted">
+                                {{ r.start_time.strftime('%H:%M') }} ➔ {{ r.end_time.strftime('%H:%M') }}
+                            </small>
+                        </td>
+                        
+                        <td class="pe-4">
+                            <!-- Correct Status Differentiating between Pre-booked and Active Parked -->
+                            <span class="badge {% if r.status=='Upcoming' %}bg-warning text-dark{% elif r.status=='Overstay' %}bg-danger{% else %}bg-primary{% endif %} px-3 shadow-sm">
+                                {{ r.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <!-- Placeholder if no one is parked in the whole system -->
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted bg-white">
+                            <i class="bi bi-inboxes display-5 opacity-25"></i>
+                            <p class="mt-2 mb-0 fw-bold">No active parking records found system-wide.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

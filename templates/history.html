@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<div class="container mt-2">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">📋 My Parking Records</h2>
+        <a href="/dashboard" class="btn btn-primary btn-sm fw-bold shadow-sm">+ New Reservation</a>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-5">
+        <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+            <thead class="table-dark text-uppercase small"><tr><th>Hub / Slot</th><th>Time Duration</th><th>Status</th><th class="text-center">Action</th></tr></thead>
+            <tbody>
+                {% for b in records %}
+                <tr>
+                    <td><small class="text-muted d-block">{{ b.location_name }}</small><span class="badge bg-info text-dark border px-3">Slot {{ b.slot_number }}</span></td>
+                    <td><small class="fw-bold">{{ b.start_time.strftime('%b %d, %H:%M') }} ➔ {{ b.end_time.strftime('%H:%M') }}</small></td>
+                    <td><span class="badge {% if b.status=='Upcoming' %}bg-warning text-dark{% elif b.status=='Active' %}bg-primary{% elif b.status=='Overstay' %}bg-danger{% else %}bg-secondary{% endif %}">{{ b.status }}</span></td>
+                    <td class="text-center">
+                        <a href="/payment/{{ b.booking_id }}" class="btn btn-xs btn-outline-success py-1 px-2 me-1 shadow-sm">Bill</a>
+                        {% if b.status in ['Active', 'Upcoming', 'Overstay'] %}
+                            {% if b.status == 'Upcoming' %}
+                                <a href="/checkin/{{ b.booking_id }}" class="btn btn-sm btn-warning shadow-sm">Check-in</a>
+                                <button class="btn btn-sm btn-dark" onclick="genQR('{{b.booking_id}}','{{b.slot_number}}')">🎫 Ticket</button>
+                            {% else %}<a href="/checkout/{{ b.booking_id }}" class="btn btn-sm btn-info fw-bold shadow-sm">Checkout</a>{% endif %}
+                            <a href="/cancel/{{ b.booking_id }}" class="btn btn-sm btn-outline-danger ms-1" onclick="return confirm('Cancel reservation?')">Cancel</a>
+                        {% else %}<span class="text-muted small">Record Locked</span>{% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="text-center py-5 text-muted">No records found. <a href="/dashboard">Book now!</a></td></tr>
+                {% endfor %}
+            </tbody>
+        </table></div>
+    </div>
+
+    <!-- USER DELETE DATA OPTION -->
+    <div class="alert alert-danger d-flex justify-content-between align-items-center mt-5 border-danger shadow-sm">
+        <div><h6 class="fw-bold mb-0 text-danger">Permanently Delete Account?</h6><small>This will erase your profile, vehicle details, and all history records.</small></div>
+        <form action="/delete_account" method="POST" onsubmit="return confirm('FINAL WARNING: Delete everything permanently?')">
+            <button type="submit" class="btn btn-danger btn-sm px-4 fw-bold">Delete My Data</button>
+        </form>
+    </div>
+</div>
+<!-- QR Modal... -->
+<script>
+function genQR(id, sl) { document.getElementById('qid').innerText = "#" + id; document.getElementById('qrcode').innerHTML = ""; new QRCode(document.getElementById("qrcode"), { text: "ID:"+id, width:140, height:140 }); new bootstrap.Modal(document.getElementById('qrm')).show(); }
+</script>
+{% endblock %}

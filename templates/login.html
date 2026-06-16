@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card shadow-lg p-5 border-0 rounded-4">
+            <h3 class="text-center fw-bold text-primary mb-4">User Login</h3>
+            <!-- ACTION PASSES THE LOCATION THROUGH -->
+            <form action="/login?loc={{ loc }}" method="POST">
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-muted small">EMAIL ADDRESS</label>
+                    <input type="email" name="email" class="form-control bg-light border-0" required placeholder="user@email.com">
+                </div>
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-muted small">PASSWORD</label>
+                    <input type="password" name="password" class="form-control bg-light border-0" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow">Authorized Sign In</button>
+            </form>
+            <div class="text-center mt-4 border-top pt-3">
+                <p class="small text-muted">New user? <a href="/register" class="text-decoration-none fw-bold">Create Account</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

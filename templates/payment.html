@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-md-5">
+        <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+            {% if is_cancelled %}
+                <div class="bg-danger text-white p-4 text-center">
+                    <i class="bi bi-x-circle-fill display-5"></i>
+                    <h4 class="fw-bold mb-0">Booking Cancelled</h4>
+                    <p class="small mb-0">Invoice #INV-{{ b.booking_id }} Voided</p>
+                </div>
+            {% else %}
+                <div class="bg-success text-white p-4 text-center">
+                    <i class="bi bi-receipt display-5"></i>
+                    <h4 class="fw-bold mb-0">Official Receipt</h4>
+                    <p class="small mb-0">Invoice #INV-{{ b.booking_id }}</p>
+                </div>
+            {% endif %}
+            
+            <div class="card-body p-4 bg-white">
+                <table class="table table-borderless small mb-4">
+                    <tr><td>User:</td><td class="text-end fw-bold">{{ b.name }}</td></tr>
+                    <tr><td>Hub:</td><td class="text-end fw-bold">{{ b.location_name }}</td></tr>
+                    <tr><td>Slot:</td><td class="text-end fw-bold">Slot {{ b.slot_number }}</td></tr>
+                </table>
+
+                <div class="bg-light p-3 rounded-3 mb-4">
+                    {% if is_cancelled %}
+                        <h4 class="text-center text-danger fw-bold mb-0">TOTAL DUE: ₹0.00</h4>
+                    {% else %}
+                        <div class="d-flex justify-content-between mb-2"><span>Standard Fee</span><span>₹{{ "%.2f"|format(base) }}</span></div>
+                        <div class="d-flex justify-content-between text-danger mb-2"><span>Penalty (Late Stay)</span><span>+ ₹{{ "%.2f"|format(penalty) }}</span></div>
+                        <hr><div class="d-flex justify-content-between fs-4 text-success fw-bold"><span>Total Paid</span><span>₹{{ "%.2f"|format(total) }}</span></div>
+                    {% endif %}
+                </div>
+
+                <div class="d-grid gap-2 no-print">
+                    <button onclick="window.print()" class="btn btn-dark fw-bold">🖨️ Print Receipt</button>
+                    <a href="/dashboard" class="btn btn-outline-primary">Back to Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

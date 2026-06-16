@@ -1,0 +1,24 @@
+/index.html‎
++20
+Lines changed: 20 additions & 0 deletions
+Original file line number	Diff line number	Diff line change
+@@ -0,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container text-center py-5">
+    <h1 class="display-4 fw-bold">SmartPark System</h1>
+    <div class="card border-0 shadow-lg p-4 mb-4">
+        <button onclick="findNearbyParking()" class="btn btn-primary btn-lg fw-bold">📡 Scan for Nearest Hubs</button>
+        <div id="location-status" class="mt-2 small fw-bold text-secondary"></div>
+        <div id="nearby-parking-box" class="mt-3"></div>
+        <div id="map-container" class="mt-3" style="display:none;"><iframe id="google-map" width="100%" height="250" frameborder="0"></iframe></div>
+    </div>
+    
+    <div class="d-flex justify-content-center gap-3 mb-4">
+        <a href="/login" class="btn btn-dark btn-lg px-5">Login</a>
+        <a href="/register" class="btn btn-outline-dark btn-lg px-5">Register</a>
+    </div>
+    <!-- CLEAR ADMIN ACCESS -->
+    <a href="/admin_login" class="btn btn-link text-muted small">🛠 Administrative Portal Access</a>
+</div>
+{% endblock %}
